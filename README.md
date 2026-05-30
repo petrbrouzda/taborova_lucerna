@@ -31,6 +31,9 @@ Ovládací portál ukazuje stav baterky, aktuální režim, a umožňuje zapína
 
 ![](/doc/pg2.png)
 
+---
+
+Schéma zapojení [je zde.](doc/schema.svg)
 
 Potřebné součástky:
 * ESP32-C3 supermini - https://s.click.aliexpress.com/e/_c4ME2h5F
@@ -40,11 +43,13 @@ Potřebné součástky:
 * jeden vypínač
 * USB konektor pro nabíjení akumulátoru
 * kus LED pásku s WS2812B (na napájení 5 V) 
+* lithiový akumulátor - používám válcový 18650
 
-Schéma zapojení [je zde.](doc/schema.svg).
+---
 
-Pro sestavení je potřeba Arduino IDE s nainstalovanou ESP32 core ("deskou") verze 3.3.x (testováno na 3.3.8)
-a knihovnami:
+Pro sestavení aplikace je potřeba Arduino IDE s nainstalovanou ESP32 core ("deskou") verze 3.3.x (testováno na 3.3.8); s deskou verze 2.x to nebude fungovat.
+
+Nutné knihovny:
 * Adafruit NeoPixel (Adafruit) 1.15.5
 * Async TCP (by ESP32Async) 3.4.10
 * ESP Async WebServer (by ESP32Async) 3.11.0 
@@ -56,4 +61,3 @@ Konfigurace desky:
 * CPU speed: 80 MHz
 * Flash speed: 40 MHz
 * Flash mode: DIO
-
