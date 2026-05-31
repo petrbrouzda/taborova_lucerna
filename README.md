@@ -15,7 +15,7 @@ Pamatuje si poslední nastavený režim; po restartu pokračuje ve stejném rež
 Předpokládá napájení z lithiového článku, měří napětí akumulátoru a pokud je pod limitem, zhasne led pásek. Pokud je pod ještě nižším limitem, vypne i ESP.
 (Pokud není na analogový vstup nic připojeno, běží bez problémů.)
 
-Výdrž na baterii je závislý od spotřeby LED - a tedy od zvoleného režimu svícení a jasu. Na 2000 mAh akumulátor vydrží při režimu "oheň" se 100% jasem cca 5,5 hod.
+Výdrž na baterii je závislý od spotřeby LED - a tedy od zvoleného režimu svícení a jasu. Na 2000 mAh akumulátor s páskem s 11 LED vydrží při režimu "oheň" se 100% jasem cca 5,5 hod.
 
 Tlačítkem se přepínají režimy v pořadí:
 * oheň, 100% jas
