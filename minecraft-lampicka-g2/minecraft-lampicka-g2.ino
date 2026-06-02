@@ -215,6 +215,7 @@ void vypniWifi() {
 }
 
 
+
 /**
  * Callback z webserveru.
  * Zde nastavte routy pro svou aplikaci.
@@ -393,50 +394,55 @@ void tlacitkoZmacknuto() {
   }
   serialLogger.log( "tlacitko, mod %d", modTlacitkem );
 
-  brightnessChange = true;
   clearTimers();
 
   switch( modTlacitkem ) {
     case 1:
       serialLogger.log( "ohen 100%" );
-      brightness=255;
       aktualniRezim = 1;
+      brightness=255;
+      pixels.setBrightness(brightness);
       tasker.setTimeout(fireAction, 1 );
       break;
     case 2:
       serialLogger.log( "ohen 12%" );
-      brightness=32;
       aktualniRezim = 1;
+      brightness=32;
+      pixels.setBrightness(brightness);
       tasker.setTimeout(fireAction, 1 );
       break;
     case 3:
       serialLogger.log( "bila 100%" );
-      brightness=255;
-      color = 16777215;
       aktualniRezim = 2;
+      color = 16777215;
+      brightness=255;
+      pixels.setBrightness(brightness);
       signalZacni( 1 );
       break;
     case 4:
       serialLogger.log( "bila 12%" );
-      brightness=32;
-      color = 16777215;
       aktualniRezim = 2;
+      color = 16777215;
+      brightness=32;
+      pixels.setBrightness(brightness);
       signalZacni( 1 );
       config.setValue( "signalMode", "1" );
       break;
     case 5:
       serialLogger.log( "cervena 100%" );
-      brightness=255;
-      color = 16711680;
       aktualniRezim = 2;
+      color = 16711680;
+      brightness=255;
+      pixels.setBrightness(brightness);
       signalZacni( 1 );
       config.setValue( "signalMode", "1" );
       break;
     case 6:
       serialLogger.log( "zelena 100%" );
-      brightness=255;
-      color = 65280;
       aktualniRezim = 2;
+      color = 65280;
+      brightness=255;
+      pixels.setBrightness(brightness);
       signalZacni( 1 );
       config.setValue( "signalMode", "1" );
       break;
