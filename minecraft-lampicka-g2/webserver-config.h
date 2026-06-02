@@ -3,10 +3,8 @@
 
 // Konfigurace wifi AP - tj. konfigurační wifi, na kterou se budete případně připojovat mobilkou.
 // Za jméno EspCam_ se příkazem .addChipIdToApHostname() doplní ID čipu, tj. EspCam_123456.
-//#define AP_SSID "LucernaA"
-//#define AP_PASSWORD "heslo12345"
-#define AP_SSID "RezinaLampicka"
-#define AP_PASSWORD "minecraft02"
+#define AP_SSID "LucernaA"
+#define AP_PASSWORD "heslo12345"
 
 // Pokud váš mobil nedělá automaticky přesměrování, zadejte do prohlížeče http://200.200.200.1
 

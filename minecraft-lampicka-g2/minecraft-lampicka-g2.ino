@@ -96,8 +96,8 @@ int stavTlacitka;
 
 
 // limity pro baterku
-#define BAT_LIMIT_1 3.2
-#define BAT_LIMIT_2 3.05
+#define BAT_LIMIT_1 3.1
+#define BAT_LIMIT_2 3.0
 
 /**
 napeti baterie
@@ -851,7 +851,7 @@ void onRequestStatus(AsyncWebServerRequest *request){
   AsyncResponseStream *response = request->beginResponseStream(CONTENT_TYPE);
   response->print( hlavicka );
 
-  int pct = (int) map_double(uBat, 3.1, 4.2, 0, 100);
+  int pct = (int) map_double(uBat, BAT_LIMIT_1, 4.2, 0, 100);
   response->printf( "<p>Baterka: %.2f V, %d %%<br>", uBat, pct );
 
   response->printf( "<p>Režim: %d</p>", aktualniRezim );
@@ -863,7 +863,7 @@ void onRequestStatus(AsyncWebServerRequest *request){
   if( aktualniRezim==1 ) {
     response->printf( "<p>Oheň</p>" );
   }
-  if( aktualniRezim>0 ) {
+  if( aktualniRezim>1 ) {
     const char * barva;
     if( color==16777215 ) {
       barva = "bílá";
