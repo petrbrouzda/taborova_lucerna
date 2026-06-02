@@ -42,24 +42,26 @@ void formatMemorySize( char * ptr, long msize )
 
   void formatDeviceInfo( char * out )
   {
-    strcpy( out, "RAM " );
+    sprintf( out, "%s %dx%d MHz; flash %d MHz; RAM ", 
+        #if defined(CONFIG_IDF_TARGET_ESP32C3)
+                "ESP32-C3",
+        #elif defined(CONFIG_IDF_TARGET_ESP32S2)
+                "ESP32-S2",
+        #elif defined(CONFIG_IDF_TARGET_ESP32S3)            
+                "ESP32-S3",
+        #elif defined(CONFIG_IDF_TARGET_ESP32) 
+                "ESP32",
+        #else
+                "ESP32-?",
+        #endif      
+                ESP.getChipCores(),      
+                ESP.getCpuFreqMHz(), 
+                (ESP.getFlashChipSpeed()/1000000)
+              );
+
     formatMemorySize( out+strlen(out), ESP.getHeapSize() );
     strcat( out, "; PSRAM " );
     formatMemorySize( out+strlen(out), ESP.getPsramSize() );
-    sprintf( out+strlen(out), "; %dx %s %d MHz; flash %d MHz", 
-            ESP.getChipCores(),
-#if defined(CONFIG_IDF_TARGET_ESP32C3)
-            "ESP32-C3",
-#elif defined(CONFIG_IDF_TARGET_ESP32S2)
-            "ESP32-S2",
-#elif defined(CONFIG_IDF_TARGET_ESP32S3)            
-            "ESP32-S3",
-#else
-            "ESP32",
-#endif            
-            ESP.getCpuFreqMHz(), 
-            (ESP.getFlashChipSpeed()/1000000)
-          );
   }
 
 #endif
@@ -93,7 +95,7 @@ void formatDeviceId( char * buf )
 #ifdef ESP32
     uint64_t macAddressTrunc = ((uint64_t)ESP.getEfuseMac()) << 40;
     long chipId = macAddressTrunc >> 40;
-    sprintf( buf, "%d", chipId );
+    sprintf( buf, "%x", chipId );
 #endif
 }
 

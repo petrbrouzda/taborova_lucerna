@@ -7,7 +7,7 @@
 
 #include "../logging/LoggerInterface.h"
 
-#define WIFIRUNNER_VERSION "1.7 2026-02-09"
+#define WIFIRUNNER_VERSION "3.1 2026-06-02"
 
 /**
  * Nástroj pro práci s Wifi. Jednoduše konfiguruje wifi jak STA (client), tak AP.
@@ -26,14 +26,22 @@ enum WfhMode {
 #define WIFIHELPER_MAX_IP_LENGTH 34
 
 /* 
-Callbacky pro stav Wifi.
+Callbacky pro stav Wifi klienta.
 Pokud se používá jen AP režim (startAp), tak se nikdy nepoužijí; ale musí být definované.
 */
 void WifiStatus_Connected( const char * ssid, int rssi, int channel );
 void WifiStatus_NotConnected( int status );
 
+/*
+Callbacky pro stav Wifi AP 
+Pokud se používá jen režim STA (klient), tak se nikdy nepoužijí; ale musí být definované.
+*/
+void WifiStatus_ClientConnected( char * mac, char * ip );
+void WifiStatus_ClientDisconnected( char * mac );
+
+
 /** 
- * ESP32C3 Micro má dementní anténu; zavolejte fixPowerForEsp32C3Micro() pro snížení výkonu.
+ * ESP32C3 SuperMini má dementní anténu; zavolejte fixPowerForEsp32C3Micro() pro snížení výkonu.
  * fix for https://github.com/espressif/arduino-esp32/issues/6767
  */
 #define ESP32C3MICRO_WIFI_POWER WIFI_POWER_8_5dBm
@@ -43,11 +51,12 @@ void WifiStatus_NotConnected( int status );
 #define RESTART_WIFI_AFTER_MSEC 120000
 
 /** Na jakém kanálu má být AP? */
-#define SOFT_AP_CHANNEL 1
+#define SOFT_AP_CHANNEL 8
 
 class WifiRunner
 {
     public:
+        /** Lépe použít asynchronní logger, protože se do něj posílají i wifi eventy. */
         WifiRunner( LoggerInterface * logger = NULL );
         void setClientConfig( const char * ssid, const char * password, int channel=0 );
         void setClientHostname( const char * hostname, bool addChipId );
@@ -58,20 +67,27 @@ class WifiRunner
          * 
          * Volat před start*()
          */
-        void fixPowerForEsp32C3Micro();
+        void fixPowerForEsp32C3SuperMini();
 
         /** 
          * Přidá k určenému jménu AP ještě chip ID
          * Volat před startApAndClient() a startAP()
          */
-        void addChipIdToApHostname();
+        void addChipIdToApHostname( bool addId = true );
 
         /** pred startApAndClient je nutne zavolat setClientConfig()! */
         void startApAndClient( const char * apSsid, const char * apPassword, IPAddress local_ip, IPAddress gateway, IPAddress subnet );
 
+        /** Pokud se spustí jen AP, je možné ho pak pomocí stopAp() a startApAgain() zastavit a znovu spustit pro řízení spotřeby.   */
         void startAp( const char * apSsid, const char * apPassword, IPAddress local_ip, IPAddress gateway, IPAddress subnet );
 
-        /** pred startClient je nutne zavolat setClientConfig() */
+        /** Pokud se provozuje jen AP, je možné ho pomocí stopAp() zastavit, ušetří se 60 mA spotřeby. Kromě AP vypne i celou WiFi! */
+        void stopAp();
+
+        /** Pokud bylo AP zastaveno pomoc stopAp(), tohle ho opět spustí. Pokud používáte webserver, není třeba webserver pouštět znovu, funguje dál. */
+        void startApAgain();
+
+        /** spustí STA (client) režim. Pred startClient je nutne zavolat setClientConfig() */
         void startClient();
 
         /** vynuti restart STA (client) spojeni */
@@ -96,6 +112,14 @@ class WifiRunner
         /** millis time, kdy se naposledy zařízení odpojilo od wifi (konec spojení) */
         long lastDisconnectedTime = 0;
 
+        void dumpEventInfo( WiFiEvent_t event, WiFiEventInfo_t info );
+
+        /** počet aktuálně připojených klientů k AP */
+        int apNumClients = 0;
+
+        /** byl za celou dobu nějaký připojený klient k AP? */
+        bool anyClientConnected = false;
+
     private:
         LoggerInterface * logger; 
         WfhMode mode = WIFIHELPER_NONE;
@@ -118,6 +142,15 @@ class WifiRunner
         char apIp[WIFIHELPER_MAX_IP_LENGTH];
 
         long startTime = 0;
+
+        // --- konfigurace AP, pro funkci startApAgain
+        char apPwd[40];
+        char apFullName[50];
+        IPAddress ipLocal;
+        IPAddress ipGw;
+        IPAddress ipSubnet;
+        bool apRunning;
+
 };
 
 #endif

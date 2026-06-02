@@ -83,6 +83,9 @@ Tasker tasker;
 MemoryHelper memoryHelper( &serialLogger );
 
 
+#include "src/toolkit/DeepSleep.h"
+
+
 #include <Adafruit_NeoPixel.h>
 // How many NeoPixels are attached to the Arduino?
 #define NUMPIXELS 11
@@ -90,8 +93,7 @@ Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // tlacitko
 int stavTlacitka;
-long lastTlacitkoEvent = 0;
-#define TLACITKO_SKIP_EVENTS 250
+
 
 // limity pro baterku
 #define BAT_LIMIT_1 3.2
@@ -119,17 +121,6 @@ Režim nastavený z webserveru nebo tlačítkem:
 */
 int aktualniRezim = 1;
 
-/**
-Stav tlačítka. Opakovanými stisky se posouvá v režimech 1-6.
- * 0 = nic (zatím nezmáčknuto)
- * 1 = ohen 100%
- * 2 = ohen 12%
- * 3 = bila 100%
- * 4 = bila 12%
- * 5 = cervena 100%
- * 6 = zelena 100%
- */
-int modTlacitkem = 0;
 
 
 // cervena color==16711680 zelena color==65280 modra color==255
@@ -138,9 +129,9 @@ int modTlacitkem = 0;
  * Při startu bliknutím ukáže stav baterky.
  */
 void signalizujStavBaterky() {
-  if( uBat > 3.8 ) {
+  if( uBat > 3.85 ) {
     color = 65280;
-  } else if( uBat > 3.4 ) {
+  } else if( uBat > 3.5 ) {
     color = 255;
   } else {
     color = 16711680;
@@ -155,6 +146,8 @@ void signalizujStavBaterky() {
 
 void setup() {
   Serial.begin(115200);
+
+  serialLogger.log( "%s; %s %s", __FILE__, __DATE__, __TIME__  );
  
   // načtení konfigurace z SPIFFS
   configProvider.openFsAndLoadConfig();
@@ -162,7 +155,7 @@ void setup() {
   // jméno Wifi AP určené ve webserver-config.h bude rozšířeno o ID čipu, třeba "ESP_154154" 
   // wifirunner.addChipIdToApHostname();
 
-  wifirunner.fixPowerForEsp32C3Micro();
+  wifirunner.fixPowerForEsp32C3SuperMini();
   wifirunner.startAp( AP_SSID, AP_PASSWORD, local_ip, gateway, subnet );
   webserver.startWebserverOnApAndClient( CAPTIVE_PORTAL_REDIRECT_REL );
 
@@ -177,11 +170,8 @@ void setup() {
 
   if( uBat<BAT_LIMIT_2 && uBat>1.0 )  {
     serialLogger.log( "malo baterky %.1f", uBat);
-    Serial.flush();
-    Serial.end();
-    esp_sleep_enable_timer_wakeup(2000L * 1000000L);
-    esp_deep_sleep_start();
-    ESP.restart();
+    setDeepSleepTimer( 1800 );
+    startDeepSleep();
   }
 
   pixels.begin(); 
@@ -189,6 +179,10 @@ void setup() {
   pixels.show();  
 
   signalizujStavBaterky();
+
+  // defaultní jas je plný
+  brightness=255;
+  brightnessChange = true;
 
   // bude spousteno periodicky
   tasker.setInterval( doMemoryInfo, 60000 );
@@ -198,6 +192,26 @@ void setup() {
 
   // rozsviti posledne pouzity rezim
   loadConfigData();
+
+  // pokud se nic nestane, za 3 min vypneme wifi
+  tasker.setTimeout( vypniWifi, 180000 );
+}
+
+
+/** 
+ * Volá se taskerem 3 minuty po startu nebo minutu po stisku tlačítka.
+ * Pokud není připojený žádný wifi klient, vypne wifi AP = ušetří 60 mA spotřeby.
+ * Pokud je připojený, odloží vypnutí o další 2 minuty.
+ */
+void vypniWifi() {
+  if( wifirunner.apNumClients != 0 ) {
+    serialLogger.log( "nekdo je pripojen k wifi, necham ho zatim bezet");
+    tasker.setTimeout( vypniWifi, 120000 );
+    return;
+  }
+
+  serialLogger.log( "vypinam WiFi" );
+  wifirunner.stopAp();
 }
 
 
@@ -226,9 +240,7 @@ void userRoutes( AsyncWebServer * server )
  * Pokud se nepoužívá AP+STA nebo STA režim (je použito startAp), tak se nikdy nepoužijí; ale musí být definované.
  */
 void WifiStatus_Connected( const char * ssid, int rssi, int channel ) {
-  serialLogger.log( "Wifi connected" );
 }
-
 
 /**
  * Callback pro reporting WiFi.
@@ -236,10 +248,25 @@ void WifiStatus_Connected( const char * ssid, int rssi, int channel ) {
  * Pokud se nepoužívá AP+STA nebo STA režim (je použito startAp), tak se nikdy nepoužijí; ale musí být definované.
  */
 void WifiStatus_NotConnected( int status ) {
-  serialLogger.log( "Wifi not connected (%d)", status );
 }
 
+/** 
+ * Callback. Je zavolán tehdy, pokud se připojí klient k AP a dostane IP adresu.
+ * Ve wifirunner->apNumClients je počet souběžně připojených klientů.
+ * Pokud se nepoužívá AP nebo AP+STA, tak se nikdy nezavolá, ale musí být definované.
+ */
+void WifiStatus_ClientConnected(char *mac, char *ip)
+{
+}
 
+/** 
+ * Callback. Je zavolán tehdy, pokud se odpojí klient od AP.
+ * Ve wifirunner->apNumClients je počet souběžně připojených klientů.
+ * Pokud se nepoužívá AP nebo AP+STA, tak se nikdy nezavolá, ale musí být definované.
+ */
+void WifiStatus_ClientDisconnected(char *mac)
+{
+}
 
 // ----------- vlastni vykonna cast aplikace (loop)
 
@@ -336,9 +363,28 @@ void doRestart()
 
 
 
-// brightness==64 nebo brightness==32
-// bila color==16777215 cerbvena color==16711680 zelena color==65280
 
+long lastTlacitkoEvent = 0;
+#define TLACITKO_SKIP_EVENTS 250
+
+/**
+Stav tlačítka. Opakovanými stisky se posouvá v režimech 1-6.
+ * 0 = nic (zatím nezmáčknuto)
+ * 1 = ohen 100%
+ * 2 = ohen 12%
+ * 3 = bila 100%
+ * 4 = bila 12%
+ * 5 = cervena 100%
+ * 6 = zelena 100%
+ */
+int modTlacitkem = 0;
+
+/**
+ * Přepíná režimy tlačítkem.
+ * 
+ * Každé zmáčknutí tlačítka také zapne WiFi na dalších 60 sekund 
+ * (pokud se někdo připojí, WiFi pak bude žít tak dlouho, dokud je klient připojený).
+ */
 void tlacitkoZmacknuto() {
   lastTlacitkoEvent = millis();
   modTlacitkem++;
@@ -346,7 +392,7 @@ void tlacitkoZmacknuto() {
     modTlacitkem=1;
   }
   serialLogger.log( "tlacitko, mod %d", modTlacitkem );
-  
+
   brightnessChange = true;
   clearTimers();
 
@@ -396,6 +442,11 @@ void tlacitkoZmacknuto() {
       break;
   }
   saveConfigData();
+
+  // na minutu zapneme wifi
+  tasker.setTimeout( vypniWifi, 60000 );
+  wifirunner.startApAgain();
+
 }
 
 void loop() {
@@ -742,7 +793,7 @@ void signalZacni( int mode ) {
 const char hlavicka[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
-  <title>Narnia lampa</title>
+  <title>Kouzelná lucerna</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     html {font-family: Arial; display: inline-block; text-align: left;}
@@ -757,7 +808,7 @@ const char hlavicka[] PROGMEM = R"rawliteral(
   </style>
 </head>
 <body>
-<h2>Narnia lampa</h2>
+<h2>Kouzelná lucerna</h2>
 <form method="GET" action="/">
  <input type="submit" name="obnov" value="Obnov stav" > 
 </form>
@@ -880,7 +931,7 @@ const char part2[] PROGMEM = R"rawliteral(
 
   response->print( part2 );
 
-  response->printf("Text:<br><input type=\"text\" name=\"text\" id=\"text\" value=\"abcd\"> ");
+  response->printf("Text:<br><input type=\"text\" name=\"text\" id=\"text\" value=\"%s\"> ", morseText );
     vlozJas( response );
     vlozBarvu( response );
 

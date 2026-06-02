@@ -7,7 +7,7 @@
 
 #include "../logging/LoggerInterface.h"
 
-#define DEVICEINFO_VERSION "2.1 2026-01-19"
+#define DEVICEINFO_VERSION "2.2 2026-06-02"
 
 
 #define WIFI_POWER_OFF -999

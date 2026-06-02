@@ -15,7 +15,7 @@ Pamatuje si poslední nastavený režim; po restartu pokračuje ve stejném rež
 Předpokládá napájení z lithiového článku, měří napětí akumulátoru a pokud je pod limitem, zhasne led pásek. Pokud je pod ještě nižším limitem, vypne i ESP.
 (Pokud není na analogový vstup nic připojeno, běží bez problémů.)
 
-Výdrž na baterii je závislý od spotřeby LED - a tedy od zvoleného režimu svícení a jasu. Na 2000 mAh akumulátor s páskem s 11 LED vydrží při režimu "oheň" se 100% jasem cca 5,5 hod.
+Výdrž na baterii je závislý od spotřeby LED - a tedy od zvoleného režimu svícení a jasu. Na 2000 mAh akumulátor s páskem s 11 LED vydrží při režimu "oheň" se 100% jasem cca 6 hod.
 
 Tlačítkem se přepínají režimy v pořadí:
 * oheň, 100% jas
@@ -24,6 +24,8 @@ Tlačítkem se přepínají režimy v pořadí:
 * bílá, 12% jas
 * červená, 100% jas
 * zelená, 100% jas
+
+Lucerna nabízí WiFi. WiFi AP se zapne na tři minuty po startu a na minutu po každém dalším zmáčknutí tlačítka. Pokud se žádné zařízení nepřipojí, WiFi se po udané době vypne (šetření baterie); pokud se někdo připojí, WiFi zůstane zapnuté tak dlouho, dokud je klient připojený.
 
 Vypněte si na mobilu data a připojte se k wifi (jméno/heslo je nastaveno v [webserver-config.h](minecraft-lampicka-g2/webserver-config.h)), captive portál vám zobrazí stav zařízení a umožní ho ovládat. Pokud se na vašem telefonu captive portál neotevře, zadejte do prohlížeče adresu 200.200.200.1.
 
