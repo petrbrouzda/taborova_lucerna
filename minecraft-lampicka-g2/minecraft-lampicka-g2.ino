@@ -56,6 +56,7 @@ V kódu volaném z webserveru je NUTNÉ používat asyncLogger, aby se akce v ht
 #include "webserver-config.h"
 EasyWebServer webserver( WEB_PORT, &asyncLogger );
 
+bool vypinatWifi = true;
 
 
 /*
@@ -233,6 +234,7 @@ void userRoutes( AsyncWebServer * server )
   server->on("/rezim1", HTTP_GET, onRequestRezim1 );
   server->on("/rezim2", HTTP_GET, onRequestRezim2 );
   server->on("/rezim3", HTTP_GET, onRequestRezim3 );
+  server->on("/fixwifi", HTTP_GET, onRequestFixWifi );
 }
 
 /**
@@ -267,6 +269,9 @@ void WifiStatus_ClientConnected(char *mac, char *ip)
  */
 void WifiStatus_ClientDisconnected(char *mac)
 {
+  if( vypinatWifi ) {
+    tasker.setTimeout( vypniWifi, 120000 );
+  }  
 }
 
 // ----------- vlastni vykonna cast aplikace (loop)
@@ -448,10 +453,6 @@ void tlacitkoZmacknuto() {
       break;
   }
   saveConfigData();
-
-  // na minutu zapneme wifi
-  tasker.setTimeout( vypniWifi, 60000 );
-  wifirunner.startApAgain();
 
 }
 
@@ -829,7 +830,7 @@ const char paticka[] PROGMEM = R"rawliteral(
 
 
 
-const char* CONTENT_TYPE = "text/html; charset=utf-8";
+
 
 void vlozJas( AsyncResponseStream *response ) {
     response->print("<p>Jas: <select name=\"jas\" >");
@@ -854,7 +855,7 @@ void onRequestStatus(AsyncWebServerRequest *request){
   asyncLogger.log( "* status");
 
   //Handle Unknown Request
-  AsyncResponseStream *response = request->beginResponseStream(CONTENT_TYPE);
+  AsyncResponseStream *response = request->beginResponseStream(webserver.HTML_UTF8);
   response->print( hlavicka );
 
   int pct = (int) map_double(uBat, BAT_LIMIT_1, 4.2, 0, 100);
@@ -884,6 +885,14 @@ void onRequestStatus(AsyncWebServerRequest *request){
     }
 
     response->printf( "<p>Jas: %d %%, barva: %s</p>", ((brightness+1)*100)/256, barva );
+  }
+
+  response->printf( "<p>WiFi se po chvíli vypne: <b>%s</b></p>",
+      vypinatWifi ? "ANO" : "NE"
+    );
+
+  if( vypinatWifi ) {
+    response->print( "<form method=\"GET\" action=\"/fixwifi\"><input type=\"submit\" name=\"obnov\" value=\"Nechat WiFi zapnuté\"></form>" );
   }
 
 const char part1a[] PROGMEM = R"rawliteral(
@@ -1070,6 +1079,14 @@ void onRequestRezim3(AsyncWebServerRequest *request){
   request->redirect("/#3");
 }
 
+void onRequestFixWifi(AsyncWebServerRequest *request){
+  asyncLogger.log( "@ req fixwifi" );
+
+  vypinatWifi=false;
+  tasker.setTimeout( vypniWifi, 0 );
+
+  request->redirect( "/" );
+}
 
 
 /*

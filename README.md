@@ -25,7 +25,7 @@ Tlačítkem se přepínají režimy v pořadí:
 * červená, 100% jas
 * zelená, 100% jas
 
-Lucerna nabízí WiFi. WiFi AP se zapne na tři minuty po startu a na minutu po každém dalším zmáčknutí tlačítka. Pokud se žádné zařízení nepřipojí, WiFi se po udané době vypne (šetření baterie); pokud se někdo připojí, WiFi zůstane zapnuté tak dlouho, dokud je klient připojený.
+Lucerna nabízí WiFi. WiFi AP se zapne na tři minuty po startu. Pokud se žádné zařízení nepřipojí, WiFi se po udané době vypne (šetření baterie); pokud se někdo připojí, WiFi zůstane zapnuté tak dlouho, dokud je klient připojený. Na konfigurační stránce můžete pro tento běh zařízení zrušit vypínání WiFi (do vypnutí zařízení zůstane Wifi zapnuté).
 
 Vypněte si na mobilu data a připojte se k wifi (jméno/heslo je nastaveno v [webserver-config.h](minecraft-lampicka-g2/webserver-config.h)), captive portál vám zobrazí stav zařízení a umožní ho ovládat. Pokud se na vašem telefonu captive portál neotevře, zadejte do prohlížeče adresu 200.200.200.1.
 
